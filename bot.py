@@ -2,7 +2,7 @@ import os
 import discord
 from discord.ext import commands, tasks
 
-from database import get_previous_sale_status, update_sale_status, get_bot_state, set_bot_state
+from database import get_previous_sale_status, update_sale_status, get_bot_state, set_bot_state, log_historical_sale
 from main import getSteamPrice, getFdevStorePrice, anydealAPIget
 from dotenv import load_dotenv
 import logging
@@ -105,7 +105,10 @@ async def sale(channel):
         # Check if the status changed to "on sale"
         if prev_status is not None and current_status == 1 and prev_status == 0:
             ping_role = True
-            sale_message += f"{website} is now on sale!\n"
+            sale_message += f"{website} is now on sale for ${price}!\n"
+
+            # Log the sale in the historical sales table
+            log_historical_sale(website, price)
 
         update_sale_status(website, current_status)
 
