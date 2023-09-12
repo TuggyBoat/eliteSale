@@ -1,6 +1,7 @@
 import os
 import discord
 from discord.ext import commands, tasks
+from discord.ext.commands import has_permissions
 
 from database import get_previous_sale_status, update_sale_status, get_bot_state, set_bot_state, log_historical_sale
 from main import getSteamPrice, getFdevStorePrice, anydealAPIget
@@ -15,7 +16,6 @@ load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 CHANNEL_ID = os.getenv('CHANNEL_ID')
-# Create a new bot instance
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
@@ -24,7 +24,7 @@ ROLE_ID = os.getenv('ROLE_ID')
 last_message_was_sale = False
 
 
-# Event: Bot is ready and connected
+
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user.name} ({bot.user.id})')
@@ -33,6 +33,7 @@ async def on_ready():
 
 
 @bot.command(name='sale')
+@has_permissions(administrator=True)
 async def sale(channel):
     price_data_backup = False
     data = anydealAPIget()
