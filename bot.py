@@ -127,19 +127,22 @@ async def sale(channel):
                 await msg.delete()
                 last_message_id = None
                 last_message_was_sale = False
-            else:
+            elif ping_role:  # There's a sale and we need to ping
+                await msg.delete()
+                content_msg = f"{role.mention} {sale_message}"
+                msg = await channel.send(content=content_msg, embed=embed)
+                last_message_id = msg.id
+                last_message_was_sale = True
+            else:  # No sale, just edit
                 await msg.edit(embed=embed)
         except discord.NotFound:
             last_message_id = None
 
-    if not last_message_id:
+    if not last_message_id:  # This means there was no existing message or it was deleted
         content_msg = None
         if ping_role:
             content_msg = f"{role.mention} {sale_message}"
             last_message_was_sale = True
-        else:
-            last_message_was_sale = False
-
         msg = await channel.send(content=content_msg, embed=embed)
         last_message_id = msg.id
 
