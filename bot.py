@@ -73,16 +73,17 @@ async def sale(channel):
                         value=steam_field_value, inline=False)
 
     fdev_price = getFdevStorePrice()
+    print(fdev_price)
     fdev_field_value = f'Not on sale: {fdev_price} USD'
 
     # Convert the fdev_price to a float for comparison
     try:
-        fdev_price_float = float(fdev_price.strip('$'))
+        fdev_price_float = float(fdev_price)
     except ValueError:
         fdev_price_float = 29.99  # Default value if conversion fails
 
     if fdev_price_float < 29.99:
-        fdev_field_value = f'**On sale**: {fdev_price} USD'
+        fdev_field_value = f'**On sale**: ${fdev_price} USD'
 
     embed.add_field(name="Frontier Store (https://www.frontierstore.net/usd/)", value=fdev_field_value, inline=False)
 
@@ -100,11 +101,15 @@ async def sale(channel):
     website_prices = [('Steam', steam_price), ('Epic', epic_price), ('Humble', humble_price),
                       ('Fdev', fdev_price_float)]
     for website, price in website_prices:
+        print(website)
         prev_status = get_previous_sale_status(website)
+        print(prev_status)
         current_status = 1 if price < 29.99 else 0  # 1 for sale, 0 for not on sale
+        print(current_status)
 
         # Check if the status changed to "on sale"
         if prev_status is not None and current_status == 1 and prev_status == 0:
+            print('YES')
             ping_role = True
             sale_message += f"{website} is now on sale for ${price}!\n"
 
@@ -119,27 +124,34 @@ async def sale(channel):
 
     last_message_was_sale = get_bot_state('last_message_was_sale') == 'True'
 
-    # Check if a message exists
     if last_message_id:
         try:
             msg = await channel.fetch_message(last_message_id)
-            if not ping_role and last_message_was_sale:  # No sale & the last message was a sale ping
+
+            # There's a new sale, so we need to delete the previous message and send a new one with a ping.
+            if ping_role:
                 await msg.delete()
-                last_message_id = None
-                last_message_was_sale = False
-            else:
+
+                content_msg = f"{role.mention} {sale_message}"
+                msg = await channel.send(content=content_msg, embed=embed)
+                last_message_id = msg.id
+                last_message_was_sale = True
+
+            # There isn't a new sale, but the last message was about a sale, so we just edit the previous message.
+            elif not ping_role and last_message_was_sale:
                 await msg.edit(embed=embed)
+
+            # Add any other cases in additional elif or else statements.
+
         except discord.NotFound:
             last_message_id = None
 
+    # If there wasn't an existing message (or it was deleted), we send a new one.
     if not last_message_id:
         content_msg = None
         if ping_role:
             content_msg = f"{role.mention} {sale_message}"
             last_message_was_sale = True
-        else:
-            last_message_was_sale = False
-
         msg = await channel.send(content=content_msg, embed=embed)
         last_message_id = msg.id
 
